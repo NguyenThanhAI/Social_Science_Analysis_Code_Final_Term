@@ -4,7 +4,13 @@ import numpy as np
 
 import pandas as pd
 
+import matplotlib.pyplot as plt
+
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix
+
+import seaborn as sns
+
 
 
 def pca(x: np.ndarray, alpha: float=0.95) -> Tuple[np.ndarray, np.ndarray]:
@@ -192,7 +198,10 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
 
     x = df_encoded.drop("wrkstat", axis=1).to_numpy()
     
-    return x, y
+    features_list = df_encoded.columns.tolist()
+    features_list.remove('wrkstat')
+    
+    return x, y, features_list, value_to_index
 
 
 # path = "./gss_16.rda"
@@ -202,8 +211,44 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
 # data = pyreadr.read_r(path)
 # df = data["gss16"]
 
-# x, y = preprocess_data(df=df, remove_email_null=False, use_text_categorical=False)
+# x, y, _, _ = preprocess_data(df=df, remove_email_null=False, use_text_categorical=False)
 
 # U, reduced_x = pca(x, alpha=0.45)
 
 # print(reduced_x, reduced_x.shape)
+
+
+def plot_bar_importance(importance):
+    fig = plt.figure(figsize=(20, 20), facecolor='w')
+    fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.2, hspace=0.6)
+    nums = len(importance)
+    cols = 3
+    rows = math.ceil(nums/cols)
+    i = 0
+
+    for cls in importance:
+        ax = fig.add_subplot(rows, cols, i + 1)
+        ax.set_title("Feature importance of class {}".format(cls))
+        ax.bar(importance[cls].keys(), np.abs(list(importance[cls].values())))
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+        ax.legend()
+        ax.grid()
+        i += 1
+        
+        
+def plot_confusion_matrix(y_test, y_pred, classes, title="Confustion matrix"):
+    cm = confusion_matrix(y_true=y_test, y_pred=y_pred)
+
+    # Create a heatmap of the confusion matrix
+    sns.heatmap(cm, annot=True, cmap='Blues', fmt='g', xticklabels=classes, yticklabels=classes)
+
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title(title)
+
+    # Add legends for the heatmap
+    bottom, top = plt.ylim()
+    plt.ylim(bottom + 0.5, top - 0.5)
+    plt.xticks(rotation=45)
+    plt.yticks(rotation=0)
+    plt.show()
