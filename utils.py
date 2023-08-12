@@ -38,7 +38,7 @@ def pca(x: np.ndarray, alpha: float=0.95) -> Tuple[np.ndarray, np.ndarray]:
 
     #print(reduced_x)
 
-    return U, reduced_x
+    return U, np.real(reduced_x)
 
 
 def construct_kernel(x: np.ndarray, type: str, sigma: Optional[float]=None, r: Optional[float]=None, gamma: Optional[float]=None, d: Optional[float]=None) -> np.ndarray:
@@ -114,11 +114,6 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
     df['emailtotal'] = np.where(df['emailhr'].isna() | df['emailmin'].isna(), np.nan, df['emailhr'] * 60 + df['emailmin'])
     df = df.drop(['emailhr', 'emailmin'], axis=1)
 
-    if remove_email_null:
-        df.dropna(subset=['emailtotal'], inplace=True)
-    else:
-        df = df[df['emailtotal'].isna()]
-        df = df.drop(['emailtotal'], axis=1)
         
     value_to_index = {}
 
@@ -169,17 +164,11 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
 
         df['educ'] = df['educ'].fillna("Unknown")
     
-    if not use_text_categorical:
-        if remove_email_null:
-            casted_columns = ['harass5', 'educ', 'polviews', 'advfront', 'snapchat', 'instagrm', 'emailtotal']
-        else:
-            casted_columns = ['harass5', 'educ', 'polviews', 'advfront', 'snapchat', 'instagrm']
 
-        for col in casted_columns:
-            df[col] = df[col].astype(np.int16)
-    else:
-        if remove_email_null:
-            df['emailtotal'] = df['emailtotal'].astype(np.int16)
+    casted_columns = ['harass5', 'educ', 'polviews', 'advfront', 'snapchat', 'instagrm']
+
+    for col in casted_columns:
+        df[col] = df[col].astype(np.int16)
             
             
     if one_hot_encode:
@@ -187,6 +176,13 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
         df_encoded = pd.get_dummies(df, columns=categorical_columns, drop_first=False)
     else:
         df_encoded = df.copy()
+        
+    if remove_email_null:
+        df_encoded.dropna(subset=['emailtotal'], inplace=True)
+        df_encoded['emailtotal'] = df_encoded['emailtotal'].astype(np.int16)
+    else:
+        df_encoded = df_encoded[df_encoded['emailtotal'].isna()]
+        df_encoded = df_encoded.drop(['emailtotal'], axis=1)
     
     if remove_email_null:
         numerical_columns = ['emailtotal']
