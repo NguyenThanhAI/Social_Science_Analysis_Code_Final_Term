@@ -165,10 +165,11 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
         df['educ'] = df['educ'].fillna("Unknown")
     
 
-    casted_columns = ['harass5', 'educ', 'polviews', 'advfront', 'snapchat', 'instagrm']
-
-    for col in casted_columns:
-        df[col] = df[col].astype(np.int16)
+    if not use_text_categorical:
+        casted_columns = ['harass5', 'educ', 'polviews', 'advfront', 'snapchat', 'instagrm']
+    
+        for col in casted_columns:
+            df[col] = df[col].astype(np.int16)
             
             
     if one_hot_encode:
