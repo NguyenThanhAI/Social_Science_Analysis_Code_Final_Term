@@ -253,3 +253,28 @@ def plot_confusion_matrix(y_test, y_pred, classes, title="Confustion matrix"):
     plt.xticks(rotation=45)
     plt.yticks(rotation=0)
     plt.show()
+    
+    
+def compute_aic(y_log_pred_prob: np.ndarray, p: int, sample_size: int=0):
+    log_likelihood_elements = np.sum(y_log_pred_prob)
+    if sample_size > 0:
+        return -2 * log_likelihood_elements + np.log(sample_size) * p
+    else:
+        return -2 * log_likelihood_elements + 2 * p
+    
+    
+def one_step_compute_aic(model, x_test, y_test, type="aic"):
+    try:
+        y_log_prob_pred = model.predict_log_proba(x_test)
+    except:
+        y_log_prob_pred = np.log(model.predict_proba(x_test) + 1e-8)
+    classes = model.classes_
+    pseudo_label_to_index = dict(zip(classes, range(len(classes))))
+    y_test_encode = np.vectorize(lambda x: pseudo_label_to_index[x])(y_test)
+    
+    y_log_prob_pred = y_log_prob_pred[np.arange(len(y_log_prob_pred)), y_test_encode]
+    
+    if type == "aic":
+        return compute_aic(y_log_pred_prob=y_log_prob_pred, p=x_test.shape[1], sample_size=0)
+    else:
+        return compute_aic(y_log_pred_prob=y_log_prob_pred, p=x_test.shape[1], sample_size=x_test.shape[0])
