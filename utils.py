@@ -108,12 +108,13 @@ def kernel_pca(x: np.ndarray, alpha: float=0.95, type: str="gaussian_rbf", sigma
     return C, reduced_data
 
 
-def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_categorical: bool=True, one_hot_encode: bool=True) -> Tuple[np.ndarray, np.ndarray]:
+def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_categorical: bool=True, one_hot_encode: bool=True, return_df: bool=False) -> Tuple[np.ndarray, np.ndarray]:
     columns_to_check = ['educ', 'wrkstat']
     df.dropna(subset=columns_to_check, inplace=True)
     df['emailtotal'] = np.where(df['emailhr'].isna() | df['emailmin'].isna(), np.nan, df['emailhr'] * 60 + df['emailmin'])
     df = df.drop(['emailhr', 'emailmin'], axis=1)
 
+    df['educ'] = df['educ'].astype(np.int16)
         
     value_to_index = {}
 
@@ -189,14 +190,17 @@ def preprocess_data(df: pd.DataFrame, remove_email_null: bool=True, use_text_cat
         numerical_columns = ['emailtotal']
         scaler = StandardScaler()
         df_encoded[numerical_columns] = scaler.fit_transform(df_encoded[numerical_columns])
+        
+    features_list = df_encoded.columns.tolist()
+    features_list.remove('wrkstat')
+    
+    if return_df:
+        return df_encoded, features_list, value_to_index
     
     y = df_encoded["wrkstat"]
     y = y.to_numpy()
 
     x = df_encoded.drop("wrkstat", axis=1).to_numpy()
-    
-    features_list = df_encoded.columns.tolist()
-    features_list.remove('wrkstat')
     
     return x, y, features_list, value_to_index
 
